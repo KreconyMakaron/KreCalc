@@ -1,225 +1,110 @@
-#include<cmath>
-#include<string>
-#include<vector>
-#include<iostream>
-
-using namespace std;
-
-typedef long double f64;
-typedef long long i64;
-typedef long long i32;
-
-const i32 I32_MAX = 2147483647;
-const i32 BRACKET_MULTIPLIER = 10;
-
-enum tokenType {
-    Number,
-    Addition,
-    Subtraction,
-    Multiplication,
-    Division,
-    Power,
-    Modulo,
-    LeftBracket,
-    RightBracket,
-    None
-};
-
-struct token {
-    tokenType type = None;
-    f64 value;
-};
-
-struct node {
-    token Token;
-    i32 leftChild = -1;
-    i32 rightChild = -1;
-};
-
-struct buffToken {
-    token Token;
-    i32 order;
-    bool isOperator;
-};
+#include"krecalc.h"
+#include <cstdio>
 
 bool isNumber(const char c) {
-    return ('0' <= c && c <= '9');
+    return ('0' <= c && c <= '9') || (c == '.');
 }
 
-bool isAni32eger(f64 x) {
-    f64 i32egerPart;
-    return modf(x, &i32egerPart) == 0;
+bool isInteger(const f64 x) {
+    f64 integerPart;
+    return std::modf(x, &integerPart) == 0;
 }
 
-vector<token> tokenizeString(string str) {
-    vector<token> result;
-    string tempString = "";
-    token tempToken, previousToken;
-    i32 leftBracketCount = 0, rightBracketCount = 0;
-    bool negative = 0;
+bool isText(const char c) {
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
+}
+
+std::vector<token> tokenizeString(std::string str) {
+    std::vector<token> tokens;
+    std::string tempString;
+    token tempToken;
     
-    //Remove whitespaces
-    for(char c : str) if(c != ' ') tempString += c;
-    str = tempString;
+    for(i32 i = 0; i < (i32)str.size(); ++i) {
+        switch(str[i]) {
+            case ' ': continue; break;
+            case Addition:          tempToken = {Addition, "+"}; break;
+            case Subtraction:       tempToken = {Subtraction, "-"}; break;
+            case Multiplication:    tempToken = {Multiplication, "*"}; break;
+            case Division:          tempToken = {Division, "/"}; break;
+            case Power:             tempToken = {Power, "^"}; break;
+            case Modulo:            tempToken = {Modulo, "%"}; break;
+            case Factorial:         tempToken = {Factorial, "!"}; break;
+            case LeftBracket:       tempToken = {LeftBracket, "("}; break;
+            case RightBracket:      tempToken = {RightBracket, ")"}; break;
 
-    //Tokenize string
-    for(i32 idx = 0; idx < (i32)str.size(); ++idx) {
-        tempToken.value = 0;
-        
-        if(isNumber(str[idx])) {
-            tempString = str[idx];
-            
-            while(isNumber(str[idx+1]) || str[idx+1] == '.') tempString += str[++idx];
-            tempToken = {Number, stold(tempString)};
-            if(negative) {
-                tempToken.value *= -1;
-                negative = 0;
-            }
-            if(tempString[tempString.size()-1] == '.') throw "Number '" + tempString + "' ends with a dot, perhaps you misspelt?";
-        }
-        else switch(str[idx]) {
-            case '+': tempToken.type = Addition; break;
-            case '-': 
-                //Handle negative numbers
-                //Though this relies on the assumption that the next token is a number
-                //This can and probably will cause bugs
-                //Will refactor it at some poi32 when adding new features
-                if(previousToken.type != Number && previousToken.type != RightBracket) negative = 1;
-                tempToken.type = Subtraction; 
-                break;
-            case '*': tempToken.type = Multiplication; break;
-            case '/': tempToken.type = Division; break;
-            case '(': 
-                //Add multiplication token between a number and left bracket ex. 2(3+4) -> 2*(3+4)
-                if(previousToken.type == Number) result.push_back({Multiplication, 0}); 
+            default:
+                tempString = str[i];
                 
-                tempToken.type = LeftBracket; 
-                leftBracketCount++;
-                break;
-            case ')': 
-                tempToken.type = RightBracket; 
-                rightBracketCount++;
-                break;
-            case '%': tempToken.type = Modulo; break;
-            case '^': tempToken.type = Power; break;
-            default: 
-                tempString = str[idx];
-                throw "Expression '" + tempString + "' is not a valid token";
+                if(isText(str[i])) {
+                    while(i+1 < (int)str.size() && isText(str[i+1])) tempString += str[++i];     //Text
+                    tempToken = {Text, tempString};
+                    break;
+                }
+                else if(isNumber(str[i])) {
+                    while(i+1 < (int)str.size() && isNumber(str[i+1])) tempString += str[++i];   //Number
+                    tempToken = {Number, tempString};
+                    break;
+                }
+                
+                tempToken = {None, ""}; // No Token Matches
+                // throw Something
                 break;
         }
-        previousToken = tempToken;
-        //This is hacky af please fix
-        if(!negative) result.push_back(tempToken);
+        tokens.emplace_back(tempToken);
     }
-    
-    if(leftBracketCount != rightBracketCount) {
-        if(abs(leftBracketCount - rightBracketCount) == 1) throw "It seems that a bracket isn't closed";
-        else throw "It seems that " + to_string(abs(leftBracketCount - rightBracketCount)) + " brackets aren't closed";
-    }
-    
-    return result;
+
+    return tokens;
 }
 
-vector<buffToken> buildOrderTable(vector<token> tokens) {
-    vector<buffToken> order;
-    i32 bracketAdditional = 0, orderNum = 0;
+bool verifyAndFixTokens(std::vector<token> &tokens) {
+    std::vector<int> v;
+    bool* removed = new bool[tokens.size()];
+
+    //Used a lambda just for fun
+    auto check = [removed, tokens](int index, std::vector<tokenType> v) {
+        for(tokenType elem : v) {
+            if(removed[index] || tokens[index].type != elem) return 0;
+            ++index;
+        }
+        return 1;
+    };
     
-    for(token t : tokens) {
-        if(t.type == LeftBracket) bracketAdditional += BRACKET_MULTIPLIER;
-        else if(t.type == RightBracket) bracketAdditional -= BRACKET_MULTIPLIER;
-        else if(t.type == Number) order.push_back({t, -1, 0});
-        else {
-            switch(t.type) {
-                case Addition:
-                case Subtraction:
-                    orderNum = 0;
-                    break;
-                case Multiplication: case Division:
-                case Modulo:
-                    orderNum = 1;
-                    break;
-                case Power:
-                    orderNum = 2;
-                    break;
-                default: break;
-            }
-            order.push_back({t, orderNum + bracketAdditional, 1});
+    for(i32 i = 0; i+2 < (i32)tokens.size(); ++i) {
+        if(check(i, {Number, Text, Number}) && tokens[i+1].value == "e") {
+            tokens[i].value += tokens[i+1].value + tokens[i+2].value;
+            removed[i+1] = 1; removed[i+2] = 1;
+            i += 2;
+        }
+        else if((check(i, {Number, Text, Addition, Number}) || check(i, {Number, Text, Subtraction, Number})) && tokens[i+1].value == "e") {
+            tokens[i].value += tokens[i+1].value + tokens[i+2].value + tokens[i+3].value;
+            removed[i+1] = 1; removed[i+2] = 1; removed[i+3] = 1;
+            i += 3;
         }
     }
 
-    return order;
+    for(i32 i = 0; i+1 < (i32)tokens.size(); ++i) {
+        if(check(i, {Number, LeftBracket}))
+    }
+
+    std::vector<token> new_tokens;
+    for(i32 i = 0; i < (i32)tokens.size(); ++i) if(!removed[i]) new_tokens.emplace_back(tokens[i]);
+    tokens = new_tokens;
+    
+    return 1;
 }
 
-i32 buildTree(i32 left, i32 right, vector<node> &tree, vector<buffToken> buffTokens) {
-    node temp;
-    if(left == right) temp.Token = buffTokens[left].Token;
-    else {
-        i32 minimum = I32_MAX, operatorIndex = 0;
-        for(i32 i = right; i >= left; --i) if(buffTokens[i].isOperator) minimum = min(minimum, buffTokens[i].order);
-        for(i32 i = right; i >= left; --i) if(buffTokens[i].isOperator && buffTokens[i].order == minimum) {
-            operatorIndex = i;
-            break;
-        }
 
-        temp.Token = buffTokens[operatorIndex].Token;
-        temp.leftChild = buildTree(left, operatorIndex-1, tree, buffTokens);
-        temp.rightChild = buildTree(operatorIndex+1, right, tree, buffTokens);
-    }
-    tree.push_back(temp);
-    return tree.size()-1;
-}
 
-f64 calculateAnswer(i32 idx, vector<node> tree) {
-    if(tree[idx].Token.type == Number) return tree[idx].Token.value;
-    f64 leftAns = calculateAnswer(tree[idx].leftChild, tree);
-    f64 rightAns = calculateAnswer(tree[idx].rightChild, tree);
 
-    switch(tree[idx].Token.type) {
-        case Addition:
-            return leftAns + rightAns;
-            break;
-        case Subtraction:
-            return leftAns - rightAns;
-            break;
-        case Multiplication:
-            return leftAns * rightAns;
-            break;
-        case Division:
-            return leftAns / rightAns;
-            break;
-        case Power:
-            return pow(leftAns, rightAns);
-            break;
-        case Modulo:
-            if(!isAni32eger(leftAns) || !isAni32eger(rightAns)) throw "The modulo operation cannot be calculated for non-i32egers: " + to_string(leftAns) + " and " + to_string(rightAns);
-            return (i64)leftAns % (i64)rightAns;
-            break;
-        default:
-            return 0;
-    }
-}
 
-int main(int argc, char** argv) {
-    try {
-        if(argc == 1) throw "Please provide an expression";
-        string inputString = argv[1];
 
-        //Turn the string i32o tokens
-        vector<token> tokens = tokenizeString(inputString);
-        
-        //Create an array that represents what priority operations have
-        vector<buffToken> buffTokens = buildOrderTable(tokens);
-        
-        //Build the Abstract Syntax Tree
-        vector<node> AST;
-        buildTree(0, buffTokens.size()-1, AST, buffTokens);
-        
-        cout << calculateAnswer(AST.size()-1, AST) << endl;
-    }
-    catch (std::string msg){
-        cout << "Error: " << msg << endl;
-    }
-    catch (const char* msg){
-        cout << "Error: " << msg << endl;
-    }
-}
+
+
+
+
+
+
+
+
+
+

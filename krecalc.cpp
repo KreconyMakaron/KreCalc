@@ -19,7 +19,7 @@ std::vector<token> tokenizeString(std::string str) {
     std::string tempString;
     token tempToken;
     
-    for(i32 i = 0; i < (i32)str.size(); ++i) {
+    for(int i = 0; i < (int)str.size(); ++i) {
         switch(str[i]) {
             case ' ': continue; break;
             case Addition:          tempToken = {Addition, "+"}; break;
@@ -56,39 +56,58 @@ std::vector<token> tokenizeString(std::string str) {
     return tokens;
 }
 
-bool verifyAndFixTokens(std::vector<token> &tokens) {
-    std::vector<int> v;
-    bool* removed = new bool[tokens.size()];
+bool match(std::vector<token>::iterator it, std::vector<tokenType> matchType, std::vector<std::string> matchValue) {
+    int k = 0;
+    for(int i = 0; i < (int)matchType.size(); ++i) {
+        if(it->type != matchType[i]) return 0;
+        if(it->type == Text && it->value != matchValue[k++]) return 0;
+        ++it;
+    }
+    return 1;   
+}
 
-    //Used a lambda just for fun
-    auto check = [removed, tokens](int index, std::vector<tokenType> v) {
-        for(tokenType elem : v) {
-            if(removed[index] || tokens[index].type != elem) return 0;
-            ++index;
-        }
-        return 1;
-    };
+void addToValue(std::vector<token> &t, std::vector<token>::iterator &it, int count) {
+    std::vector<token>::iterator temp = it; it++;
+    while(count--) {
+        temp->value += it->value;
+        it = t.erase(it);
+    }
+}
+
+bool verifyAndFixTokens(std::vector<token> &t) {
+    std::vector<token>::iterator it;
     
-    for(i32 i = 0; i+2 < (i32)tokens.size(); ++i) {
-        if(check(i, {Number, Text, Number}) && tokens[i+1].value == "e") {
-            tokens[i].value += tokens[i+1].value + tokens[i+2].value;
-            removed[i+1] = 1; removed[i+2] = 1;
-            i += 2;
-        }
-        else if((check(i, {Number, Text, Addition, Number}) || check(i, {Number, Text, Subtraction, Number})) && tokens[i+1].value == "e") {
-            tokens[i].value += tokens[i+1].value + tokens[i+2].value + tokens[i+3].value;
-            removed[i+1] = 1; removed[i+2] = 1; removed[i+3] = 1;
-            i += 3;
-        }
+    //eg. 2e4
+    it = t.begin();
+    while(it != t.end()) {
+        if(match(it, {Number, Text, Number}, {"e"})) addToValue(t, it, 2);
+        else it++;
+    }
+    
+    /* //eg. 2e+4 or 2e-4 */
+    it = t.begin();
+    while(it != t.end()) {
+        if(match(it, {Number, Text, Addition, Number}, {"e"}) || match(it, {Number, Text, Subtraction, Number}, {"e"})) addToValue(t, it, 3);
+        else it++;
     }
 
-    for(i32 i = 0; i+1 < (i32)tokens.size(); ++i) {
-        if(check(i, {Number, LeftBracket}))
+    //eg. 2(...) -> 2*(...)
+    it = t.begin();
+    while(it != t.end()) {
+        if(match(it, {Number, LeftBracket}, {})) t.insert(++it, {Multiplication, "*"});
+        else it++;
     }
 
-    std::vector<token> new_tokens;
-    for(i32 i = 0; i < (i32)tokens.size(); ++i) if(!removed[i]) new_tokens.emplace_back(tokens[i]);
-    tokens = new_tokens;
+    int bracketDiff = 0;
+    for(int i = 0; i < (int)t.size(); ++i) {
+        if(t[i].type == LeftBracket) bracketDiff++;
+        if(t[i].type == RightBracket) bracketDiff--;
+    }
+    
+    if(bracketDiff != 0) {
+        //Throw Something
+        return 0;
+    }
     
     return 1;
 }

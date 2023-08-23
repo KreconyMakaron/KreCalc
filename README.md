@@ -1,6 +1,7 @@
 # KreCalc
 A calculator written in C++ capable of calculating complex expressions
-It may be a bit messy because I decided to challenge myself and not really read up on the topic
+
+It may be a bit messy because I decided to challenge myself and not really read up on the topic.
 The only thing I knew before making it is that I would need to create a Abstract Syntax Tree
 
 ## Features

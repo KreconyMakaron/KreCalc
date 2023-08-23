@@ -13,7 +13,10 @@ Currently available operations:
 - '^' Exponantiation
 - '%' Modulus (Only works on integers and negative values are calculated like c++ would by default)
 
-All operations are calculated using 64-bit floats (long double)
+Other Features:
+- All operations are calculated using 64-bit floats (c++ long double)
+- Support for scientific notation (eg. 1e5, 1e+5, 1e-5)
+- No need to put * inbetween a number and brackets
 
 ## Usage
 ```sh
@@ -21,14 +24,15 @@ $ ./krecalc "<expression>"
 ```
 For example:
 ```sh
-$ ./krecalc "3*(4+2)+7^4-8/3"
-$ 2416.33
+$ ./krecalc "3(4+2) + 3^2 * 3.2e-3"
+$ 18.0288
 ```
 
 ## Planned Features
+- Support for flags
 - Functions like logarithms and the binomial coefficient
 - Calculating the factorial
-- Support for interpretation of scientific notation ex. 3e4 or 4.5e+12
 - Fixing messy code like the current workaround for negative numbers
 - Fixing bugs :>
 - Ability to display the answer in full notation rather than scientific
+- Error Handling

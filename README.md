@@ -12,11 +12,13 @@ Currently available operations:
 - '/' Division
 - '^' Exponantiation
 - '%' Modulus (Only works on integers and negative values are calculated like c++ would by default)
+- '!' Factorial (Only works on integers)
 
 Other Features:
 - All operations are calculated using 64-bit floats (c++ long double)
 - Support for scientific notation (eg. 1e5, 1e+5, 1e-5)
 - No need to put * inbetween a number and brackets
+- Error Handling
 
 ## Usage
 ```sh
@@ -31,8 +33,4 @@ $ 18.0288
 ## Planned Features
 - Support for flags
 - Functions like logarithms and the binomial coefficient
-- Calculating the factorial
-- Fixing messy code like the current workaround for negative numbers
-- Fixing bugs :>
 - Ability to display the answer in full notation rather than scientific
-- Error Handling

@@ -15,7 +15,6 @@ const i32 INT_MAX = 2147483647;
 const i32 BRACKET_MULTIPLIER = 10;
 
 enum tokenType {
-    Number,
     Addition        = '+',
     Subtraction     = '-',
     Multiplication  = '*',
@@ -25,6 +24,7 @@ enum tokenType {
     LeftBracket     = '(',
     RightBracket    = ')',
     Factorial       = '!',
+    Number,
     Function,
     Text,
     None
@@ -33,6 +33,21 @@ enum tokenType {
 struct token {
     tokenType type = None;
     std::string value;
+
+    bool isOperator() {
+        switch(type) {
+            case Number:
+            case Text:
+            case Function:
+            case Factorial:
+            case LeftBracket:
+            case RightBracket:
+            case None:
+                return 0;
+            default:
+                return 1;
+        }
+    }
 };
 
 struct node {
@@ -44,24 +59,17 @@ struct node {
 struct buffToken {
     token Token;
     i32 order;
-    bool isOperator;
 };
 
 bool isNumber(const char c);
 bool isInteger(const f64 x);
+bool isInteger(const f64 x, f64 &integerPart);
 bool isText(const char c);
 
 std::vector<token> tokenizeString(std::string str);
-bool verifyAndFixTokens(std::vector<token> &tokens);
+void verifyAndFixTokens(std::vector<token> &tokens);
+f64 calculateAnswer(i32 idx, std::vector<node> tree);
+i32 buildTree(i32 left, i32 right, std::vector<node> &tree, std::vector<buffToken> buffTokens);
+std::vector<buffToken> buildOrderTable(std::vector<token> tokens);
+f64 factorial(std::string str);
 #endif
-
-// TODO:
-// input flags - main focus of main.cpp
-// 
-// error handing:
-// - Modulo ints
-// - No expression provided
-// - Invalid token
-// - Brackets not matching
-// - dot at the end of numebr
-// - operator after operator

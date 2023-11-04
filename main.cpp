@@ -7,19 +7,23 @@ int main(int argc, char** argv) {
         if(argc == 1) throw "Please provide an expression";
         string inputString = argv[1];
 
-        cout << inputString << endl;
-
         //Turn input string into tokens
         vector<token> tokens = tokenizeString(inputString);
         verifyAndFixTokens(tokens);
+
+
+        vector<orderedToken> orderedTokens = buildOrderTable(tokens);
+        cout << "Token Count: " << tokens.size() << endl;
+        cout << "Token Order: ";
+        for(orderedToken& ot :orderedTokens) cout << ot.order << ' ';
+        cout << endl;
+
+        vector<node> tree;
+        makeTree(0, orderedTokens.size()-1, tree, orderedTokens); 
+
+        cout << "Node Count: " << tree.size() << endl;
         
-        vector<buffToken> buffTokens = buildOrderTable(tokens);
-        
-        //Build Abstract Syntax Tree
-        vector<node> AST;
-        buildTree(0, buffTokens.size()-1, AST, buffTokens);
-        
-        cout << calculateAnswer(AST.size()-1, AST) << endl;
+        cout << calculateAnswer(tree.size()-1, tree) << endl;
     }
     catch (std::string msg){
         cout << "Error: " << msg << endl;

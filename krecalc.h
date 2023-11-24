@@ -1,5 +1,4 @@
-#ifndef KREC
-#define KREC
+#pragma once
 
 #include<cmath>
 #include<string>
@@ -28,16 +27,6 @@ enum tokenType {
     RightBracket    = ')',
     Factorial       = '!',
     Comma           = ',',
-    //43
-    //45
-    //42
-    //47
-    //94
-    //37
-    //40
-    //41
-    //33
-    //44
 };
 
 struct token {
@@ -88,4 +77,3 @@ f64 factorial(std::string str);
 f64 calculateAnswer(int idx, std::vector<node> tree);
 
 std::ostream& operator<<(std::ostream& o, const token& t);
-#endif

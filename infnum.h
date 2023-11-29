@@ -7,12 +7,8 @@
 #include<algorithm>
 #include<cmath>
 
-namespace infnum {
-    
-typedef uint64_t u64;
-const u64 U64_MAX = UINT64_MAX;
-
 class infnum {
+    typedef uint64_t u64;
 
 private:
     template<typename T>
@@ -58,7 +54,7 @@ public:
     template<typename T>
     void operator=(const T t) {
         *this = infnum();
-        if(std::is_integral_v<T>) putInteger(t);
+        if(std::is_integral_v<T>) putBits(t);
         else if(std::is_floating_point_v<T>) putFloat(t);
     }    
     bool operator==(const infnum& other);
@@ -83,11 +79,7 @@ public:
     
     void operator>>=(const int& count);
     void operator<<=(const int& count);
-
-    u64& operator[](const std::size_t& index);
-    std::size_t size() const;
 };
 
-std::ostream& operator<<(std::ostream& o, const infnum& n);
 
-}
+std::ostream& operator<<(std::ostream& o, const infnum& n);

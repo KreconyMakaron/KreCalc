@@ -1,29 +1,4 @@
 #include"infnum.h"
-#include<bitset> // for testing purposes
-
-template<typename T>
-void infnum::putBits(T t) {
-    if(t < 0) {
-        sign = 1;
-        t *= -1;
-    }
-    std::memcpy(&data[1], &t, sizeof(t));
-}
-
-template<typename T>
-void infnum::putFloat(T t) {
-    int exp;
-    T val = std::frexp(t, &exp);
-    
-    for(int i = 63; i >= 0; --i) {
-        val *= 2;
-        if(val >= 1) {
-            data[0] += (1ULL << i);
-            val -= 1;
-        }
-    }
-    *this <<= exp;
-}
 
 void infnum::removeLeadingZeros() {
     while(*(this->data.end()-1) == 0 && this->data.size() > 2) this->data.pop_back();
@@ -84,20 +59,6 @@ void infnum::longShiftRight(int count) {
     while(data.size() < 2) data.push_back(0);
 }
 
-template<typename T>
-void infnum::operator=(const T t) {
-    std::cout << sign;
-    *this = infnum();
-    std::cout << sign;
-    if(std::is_integral_v<T>) putBits(t);
-    else if(std::is_floating_point_v<T>) putFloat(t);
-}
-
-infnum infnum::operator-() {
-    this->sign = !this->sign;
-    return *this;
-}
-
 bool infnum::operator==(const infnum& other) {
     if(sign != other.sign) return 0;
     if(data.size() != other.data.size()) return 0;
@@ -142,12 +103,24 @@ infnum infnum::operator-(const infnum& other) {
     return this->subtract(other);
 }
 
-void infnum::operator-=(const infnum& other) {
-    *this = *this - other;
+infnum infnum::operator*(const infnum& other) {
+}
+
+infnum infnum::operator/(const infnum& other) {
+    throw "Not implemented";
+}
+
+infnum infnum::operator-() {
+    this->sign = !this->sign;
+    return *this;
 }
 
 void infnum::operator+=(const infnum& other) {
     *this = *this + other;
+}
+
+void infnum::operator-=(const infnum& other) {
+    *this = *this - other;
 }
 
 infnum infnum::operator>>(const int& count) {
@@ -165,10 +138,6 @@ infnum infnum::operator>>(const int& count) {
 
     temp.removeLeadingZeros();
     return temp;
-}
-
-void infnum::operator>>=(const int& other) {
-    *this = *this >> other;
 }
 
 infnum infnum::operator<<(const int& count) {
@@ -191,6 +160,10 @@ infnum infnum::operator<<(const int& count) {
     return temp;
 }
 
+void infnum::operator>>=(const int& other) {
+    *this = *this >> other;
+}
+
 void infnum::operator<<=(const int& other) {
     *this = *this << other;
 }
@@ -202,28 +175,27 @@ std::ostream& operator<<(std::ostream& o, const infnum& n) {
     return o;
 }
 
-int main() {
-    /*
-     * TODO: 
-     * make ostream overload output in decimal
-     * add multiplication
-     */
 
-    infnum y = -2;
-    std::cout << y;
-    y = 4;
 
-    return 0;
-    // Decimal expansion
-    infnum x = 0.34522934172345;
-    typedef uint64_t u64;
-    u64 mult = 1ULL << 63;
-    u64 hihi = 0;
-    for(int i = 0; i < 64; ++i) {
-        if(x.data[0] & mult) hihi += mult;
-        mult >>= 1;
-    }
-    std::cout << hihi << '/' << UINT64_MAX;
-    std::cout << '\n' << (long double)hihi / (long double)UINT64_MAX;
-}
+/*
+ * TODO: 
+ * add multiplication
+ * make ostream overload output in decimal
+ */
 
+/* infnum y = -2; */
+/* std::cout << y; */
+/* y = 4; */
+
+/* return 0; */
+/* // Decimal expansion */
+/* infnum x = 0.34522934172345; */
+/* typedef uint64_t u64; */
+/* u64 mult = 1ULL << 63; */
+/* u64 hihi = 0; */
+/* for(int i = 0; i < 64; ++i) { */
+/*     if(x.data[0] & mult) hihi += mult; */
+/*     mult >>= 1; */
+/* } */
+/* std::cout << hihi << '/' << UINT64_MAX; */
+/* std::cout << '\n' << (long double)hihi / (long double)UINT64_MAX; */

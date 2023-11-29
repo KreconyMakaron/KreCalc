@@ -1,4 +1,5 @@
 #pragma once
+
 #include<cstdint>
 #include<iostream>
 #include<vector>
@@ -8,15 +9,32 @@
 
 class infnum {
     typedef uint64_t u64;
-    typedef __int128 i128;
 
 private:
     template<typename T>
-    void putBits(T t);
-    
+    void putInteger(T t) {
+        if(t < 0) {
+            sign = 1;
+            t *= -1;
+        }
+        std::memcpy(&data[1], &t, sizeof(t));
+    }
+
     template<typename T>
-    void putFloat(T t);
-    
+    void putFloat(T t) {
+        int exp;
+        T val = std::frexp(t, &exp);
+        
+        for(int i = 63; i >= 0; --i) {
+            val *= 2;
+            if(val >= 1) {
+                data[0] += (1ULL << i);
+                val -= 1;
+            }
+        }
+        *this <<= exp;
+    }
+
     void removeLeadingZeros();
     
     infnum add(const infnum& other);
@@ -34,7 +52,11 @@ public:
     infnum() {}
     
     template<typename T>
-    void operator=(const T t);
+    void operator=(const T t) {
+        *this = infnum();
+        if(std::is_integral_v<T>) putBits(t);
+        else if(std::is_floating_point_v<T>) putFloat(t);
+    }    
     bool operator==(const infnum& other);
     
     bool operator>(const infnum& other);
@@ -42,8 +64,10 @@ public:
     bool operator<(const infnum& other);
     bool operator<=(const infnum& other);
     
-    infnum operator-(const infnum& other);
     infnum operator+(const infnum& other);
+    infnum operator-(const infnum& other);
+    infnum operator*(const infnum& other);
+    infnum operator/(const infnum& other);
     
     infnum operator-();
     
@@ -57,3 +81,5 @@ public:
     void operator<<=(const int& count);
 };
 
+
+std::ostream& operator<<(std::ostream& o, const infnum& n);

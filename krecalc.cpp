@@ -1,6 +1,4 @@
 #include"krecalc.h"
-#include <algorithm>
-#include <bitset>
 
 bool isNumber(const char c) {
     return ('0' <= c && c <= '9') || (c == '.');

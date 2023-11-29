@@ -30,7 +30,7 @@ $ ./krecalc "3(4+2) + 3^2 * 3.2e-3"
 $ 18.0288
 ```
 
-## Planned Features
-- Support for flags
-- Functions like logarithms and the binomial coefficient
-- Ability to display the answer in full notation rather than scientific
+## KreCalc 2.0 (WIP)
+- Support for functions like sin(x), ln(x), etc.
+- Switch from 64-bit floats to "infnum", a custom data type holding 64 bits of data after the decimal point and a dynamically sized amount of data before the decimal point. Under the hood it works using std::vector
+- Proper Error Handling

@@ -85,11 +85,13 @@ public:
     bool hasLeadingZero();
 
     std::size_t size() const;
+    u64& operator[](const std::size_t& index);
+    u64 operator[](const std::size_t& index) const;
 };
 
 u64 highBits(const u64& x);
 u64 lowBits(const u64& x);
-u64 multiply(const u64& x, const u64& y, u64& result);
+u64 mult_u64(const u64& x, const u64& y, u64& result);
 }
 
 std::ostream& operator<<(std::ostream& o, const infnum::infnum& n);

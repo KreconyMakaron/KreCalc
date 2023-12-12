@@ -3,11 +3,11 @@
 
 namespace infnum {
 void infnum::removeLeadingZeros() {
-    while(*(this->data.end()-1) == 0 && this->data.size() > 2) this->data.pop_back();
+    while(*(this->data.end()-1) == 0 && this->size() > 2) this->data.pop_back();
 }
 
 infnum infnum::add(const infnum& other) {
-    int n = std::max(data.size(), other.data.size());
+    int n = std::max(size(), other.data.size());
     bool carry = 0;
     infnum a = *this, b = other;
     a.sign = 0; b.sign = 0;
@@ -25,7 +25,7 @@ infnum infnum::add(const infnum& other) {
 }
 
 infnum infnum::subtract(const infnum& other) {
-    int n = std::max(data.size(), other.data.size());
+    int n = std::max(size(), other.data.size());
     infnum a = *this, b = other;
     a.sign = 0; b.sign = 0;
     if(b > a) {
@@ -58,20 +58,20 @@ void infnum::longShiftRight(int count) {
     std::reverse(data.begin(), data.end());
     for(int i = 0; i++ < count && !data.empty();) data.pop_back();
     std::reverse(data.begin(), data.end());
-    while(data.size() < 2) data.push_back(0);
+    while(size() < 2) data.push_back(0);
 }
 
 bool infnum::operator==(const infnum& other) {
     if(sign != other.sign) return 0;
-    if(data.size() != other.data.size()) return 0;
-    for(int i = data.size()-1; i >= 0; --i) if(data[i] != other.data[i]) return 0;
+    if(size() != other.data.size()) return 0;
+    for(int i = size()-1; i >= 0; --i) if(data[i] != other.data[i]) return 0;
     return 1;
 }
 
 bool infnum::operator>(const infnum& other) {
     if(sign != other.sign) return sign < other.sign;
-    if(data.size() != other.data.size()) return data.size() > other.data.size();
-    for(int i = data.size()-1; i >= 0; ++i) if(data[i] != other.data[i]) return data[i] > other.data[i];
+    if(size() != other.data.size()) return data.size() > other.data.size();
+    for(int i = size()-1; i >= 0; ++i) if(data[i] != other.data[i]) return data[i] > other.data[i];
     return 0;
 }
 
@@ -134,16 +134,16 @@ u64 multiply(const u64& a, const u64& b, u64& carry) {
     return s1 << 32 | s0;
 }
 
-bool hasLeadingZero(const infnum x) {
-    return (x.data.size() == 2) && (x.data[1] == 0);
+bool infnum::hasLeadingZero() {
+    return (this->size() == 2) && (this->data[1] == 0);
 }
 
 infnum infnum::operator*(const infnum& other) {
     infnum c, d, temp;
     u64 carry = 0;
-    for(int i = 0; i < this->data.size(); ++i) {
+    for(int i = 0; i < this->size(); ++i) {
         temp = 0;
-        for(int j = 0; j < other.data.size(); ++j) {
+        for(int j = 0; j < other.size(); ++j) {
             d = carry; d += multiply(this->data[i], other.data[j], carry);
             temp += d << (64 * j);
         }
@@ -153,7 +153,7 @@ infnum infnum::operator*(const infnum& other) {
         }
         c += temp << (64 * i);
     }
-    return c >> (2 - hasLeadingZero(*this) - hasLeadingZero(other)) * 64;
+    return c >> (2 - this->hasLeadingZero() - other.size()) * 64;
 }
 
 infnum infnum::operator/(const infnum& other) {
@@ -180,9 +180,9 @@ infnum infnum::operator>>(const int& count) {
     int rest = count % 64;
     u64 mask = ((1 << rest) - 1);
     
-    for(int i = 0; i < (int)data.size(); ++i) {
+    for(int i = 0; i < (int)size(); ++i) {
         temp.data[i] >>= rest;
-        u64 x = (i == (int)temp.data.size()-1 ? 0 : mask & temp.data[i+1]);
+        u64 x = (i == (int)temp.size()-1 ? 0 : mask & temp.data[i+1]);
         temp.data[i] += x << (64 - rest);
     }
 
@@ -200,9 +200,9 @@ infnum infnum::operator<<(const int& count) {
 
     if(temp.data.back() & mask) temp.data.push_back(temp.data.back() & mask);
     std::reverse(temp.data.begin(), temp.data.end());
-    for(int i = 0; i < (int)temp.data.size(); ++i) {
+    for(int i = 0; i < (int)temp.size(); ++i) {
         temp.data[i] <<= rest;
-        u64 x = (i == (int)temp.data.size()-1 ? 0 : mask & temp.data[i+1]);
+        u64 x = (i == (int)temp.size()-1 ? 0 : mask & temp.data[i+1]);
         temp.data[i] += x >> (64 - rest);
     }
     std::reverse(temp.data.begin(), temp.data.end());
@@ -217,6 +217,11 @@ void infnum::operator>>=(const int& other) {
 void infnum::operator<<=(const int& other) {
     *this = *this << other;
 }
+
+std::size_t infnum::size() const {
+    return this->size();
+}
+
 }
 
 std::ostream& operator<<(std::ostream& o, const infnum::infnum& n) {
@@ -227,10 +232,8 @@ std::ostream& operator<<(std::ostream& o, const infnum::infnum& n) {
 }
 
 
-
 /*
  * TODO: 
- * add multiplication
  * make ostream overload output in decimal
  */
 

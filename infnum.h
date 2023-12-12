@@ -81,12 +81,15 @@ public:
     
     void operator>>=(const int& count);
     void operator<<=(const int& count);
+
+    bool hasLeadingZero();
+
+    std::size_t size() const;
 };
 
 u64 highBits(const u64& x);
 u64 lowBits(const u64& x);
 u64 multiply(const u64& x, const u64& y, u64& result);
-bool hasLeadingZero(const infnum x);
 }
 
 std::ostream& operator<<(std::ostream& o, const infnum::infnum& n);

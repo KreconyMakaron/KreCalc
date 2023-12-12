@@ -1,5 +1,7 @@
 #include"infnum.h"
+#include<bitset>
 
+namespace infnum {
 void infnum::removeLeadingZeros() {
     while(*(this->data.end()-1) == 0 && this->data.size() > 2) this->data.pop_back();
 }
@@ -103,7 +105,55 @@ infnum infnum::operator-(const infnum& other) {
     return this->subtract(other);
 }
 
+u64 highBits(const u64& x) {
+    return x >> 32ULL;
+}
+
+u64 lowBits(const u64& x) {
+    return x & ((1ULL << 32) - 1);
+}
+
+u64 multiply(const u64& a, const u64& b, u64& carry) {
+    u64 s0, s1, s2, s3; 
+    
+    u64 x = lowBits(a) * lowBits(b);
+    s0 = lowBits(x);
+    
+    x = highBits(a) * lowBits(b) + highBits(x);
+    s1 = lowBits(x);
+    s2 = highBits(x);
+    
+    x = s1 + lowBits(a) * highBits(b);
+    s1 = lowBits(x);
+    
+    x = s2 + highBits(a) * highBits(b) + highBits(x);
+    s2 = lowBits(x);
+    s3 = highBits(x);
+    
+    carry = s3 << 32 | s2;
+    return s1 << 32 | s0;
+}
+
+bool hasLeadingZero(const infnum x) {
+    return (x.data.size() == 2) && (x.data[1] == 0);
+}
+
 infnum infnum::operator*(const infnum& other) {
+    infnum c, d, temp;
+    u64 carry = 0;
+    for(int i = 0; i < this->data.size(); ++i) {
+        temp = 0;
+        for(int j = 0; j < other.data.size(); ++j) {
+            d = carry; d += multiply(this->data[i], other.data[j], carry);
+            temp += d << (64 * j);
+        }
+        if(carry) {
+            temp.data.push_back(carry);
+            carry = 0;
+        }
+        c += temp << (64 * i);
+    }
+    return c >> (2 - hasLeadingZero(*this) - hasLeadingZero(other)) * 64;
 }
 
 infnum infnum::operator/(const infnum& other) {
@@ -167,8 +217,9 @@ void infnum::operator>>=(const int& other) {
 void infnum::operator<<=(const int& other) {
     *this = *this << other;
 }
+}
 
-std::ostream& operator<<(std::ostream& o, const infnum& n) {
+std::ostream& operator<<(std::ostream& o, const infnum::infnum& n) {
     if(n.sign == 1) o << '-';
     for(auto it = n.data.rbegin(); it != n.data.rend()-1; ++it) o << *it << (it == n.data.rend()-2 ? '.' : ' ');
     o << n.data[0];
@@ -190,7 +241,7 @@ std::ostream& operator<<(std::ostream& o, const infnum& n) {
 /* return 0; */
 /* // Decimal expansion */
 /* infnum x = 0.34522934172345; */
-/* typedef uint64_t u64; */
+/* typedef u64 u64; */
 /* u64 mult = 1ULL << 63; */
 /* u64 hihi = 0; */
 /* for(int i = 0; i < 64; ++i) { */

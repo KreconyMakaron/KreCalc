@@ -7,8 +7,10 @@
 #include<algorithm>
 #include<cmath>
 
+namespace infnum {
+typedef uint64_t u64;
+
 class infnum {
-    typedef uint64_t u64;
 
 private:
     template<typename T>
@@ -54,7 +56,7 @@ public:
     template<typename T>
     void operator=(const T t) {
         *this = infnum();
-        if(std::is_integral_v<T>) putBits(t);
+        if(std::is_integral_v<T>) putInteger(t);
         else if(std::is_floating_point_v<T>) putFloat(t);
     }    
     bool operator==(const infnum& other);
@@ -81,5 +83,10 @@ public:
     void operator<<=(const int& count);
 };
 
+u64 highBits(const u64& x);
+u64 lowBits(const u64& x);
+u64 multiply(const u64& x, const u64& y, u64& result);
+bool hasLeadingZero(const infnum x);
+}
 
-std::ostream& operator<<(std::ostream& o, const infnum& n);
+std::ostream& operator<<(std::ostream& o, const infnum::infnum& n);

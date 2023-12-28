@@ -42,13 +42,14 @@ private:
 	infnum add(const infnum& other) const;
 	infnum subtract(const infnum& other) const;
 	
-	void longShiftLeft(int count, bool fix);
-	void longShiftRight(int count, bool fix);
+	void longShiftLeft(int count);
+	void longShiftRight(int count);
 	
 public:
 	std::vector<u64> data = {0, 0}; //64 bits binary expansion
 	bool sign = 0;
 
+	infnum(std::vector<u64> v) {data = v;}
 	template<typename T>
 	infnum(T t){ *this = t; }
 	infnum() {}
@@ -68,21 +69,19 @@ public:
 	
 	infnum operator+(const infnum& other) const;
 	infnum operator-(const infnum& other) const;
-	infnum operator*(const infnum& other);
-	infnum operator/(const infnum& other);
+	infnum operator*(const infnum& other) const;
+	infnum operator/(infnum other) const;
 	
 	infnum operator-();
 	
 	void operator+=(const infnum& other);
 	void operator-=(const infnum& other);
 	
-	infnum operator>>(const int& count);
-	infnum operator<<(const int& count);
+	infnum operator>>(const int& count) const;
+	infnum operator<<(const int& count) const;
 	
 	void operator>>=(const int& count);
 	void operator<<=(const int& count);
-
-	bool hasLeadingZero() const;
 
 	std::size_t size() const;
 	u64& operator[](const std::size_t& index);
@@ -92,6 +91,15 @@ public:
 u64 highBits(const u64& x);
 u64 lowBits(const u64& x);
 u64 mult_u64(const u64& x, const u64& y, u64& result);
+
+infnum round(infnum x); 
+infnum floor(infnum x); 
+infnum ceil(infnum x); 
+infnum abs(infnum x); 
+infnum biggest_multiple(const u64 limit, const infnum query, const infnum mult);
+
+//remove
 }
 
-std::ostream& operator<<(std::ostream& o, const infnum::infnum& n);
+std::ostream& operator<<(std::ostream& o, infnum::infnum& n);
+std::string pinrt(infnum::infnum x);

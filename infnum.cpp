@@ -1,4 +1,5 @@
 #include"infnum.h"
+#include<iomanip>
 
 namespace infnum {
 const infnum BASE = (infnum)1 << 64;
@@ -58,18 +59,18 @@ infnum infnum::subtract(const infnum& other) const {
 	return a;
 }
 
-void infnum::longShiftLeft(int count, bool fix = 1) {
+void infnum::longShiftLeft(int count) {
 	std::reverse(data.begin(), data.end());
 	for(int i = 0; i++ < count;) data.push_back(0);
 	std::reverse(data.begin(), data.end());
-	if(fix) removeLeadingZeros();
+	removeLeadingZeros();
 }
 
-void infnum::longShiftRight(int count, bool fix = 1) {
+void infnum::longShiftRight(int count) {
 	std::reverse(data.begin(), data.end());
 	for(int i = 0; i++ < count && !data.empty();) data.pop_back();
 	std::reverse(data.begin(), data.end());
-	if(fix) while(size() < 2) data.push_back(0);
+	while(size() < 2) data.push_back(0);
 }
 
 bool infnum::operator==(const infnum& other) const {
@@ -141,37 +142,47 @@ u64 mult_u64(const u64& a, const u64& b, u64& carry) {
 	return s1 << 32 | s0;
 }
 
-bool infnum::hasLeadingZero() const {
-	return (this->size() == 2) && (this->data[1] == 0);
-}
-
-infnum infnum::operator*(const infnum& other) {
+infnum infnum::operator*(const infnum& other) const {
 	infnum c, d, temp;
 	u64 carry = 0;
 	for(int i = 0; i < this->size(); ++i) {
 		temp = 0;
 		for(int j = 0; j < other.size(); ++j) {
-			d = carry; d += mult_u64(this->data[i], other[j], carry);
+			d = carry; 
+			d += mult_u64(this->data[i], other[j], carry);
 			d.longShiftLeft(j);
+			/* std::cout << temp << " + " << d; */
 			temp += d;
+			if(j != other.size() - 1 && j >= 2 && d == 0) temp.data.push_back(0);
+			/* std::cout << " = " << temp << '\n'; */
+			/* std::cout << "i: " << i << ", j: " << j << ", d: " << d << ", carry: " << carry << '\n'; */
 		}
 		if(carry) {
+			if(d == 0) temp.data.push_back(0);
 			temp.data.push_back(carry);
 			carry = 0;
 		}
-		c += temp << (64 * i);
+		/* std::cout << temp << '\n'; */
+		temp.longShiftLeft(i);
+		c += temp;
+		/* std::cout << "chuj: " << c << '\n'; */
 	}
 	c.longShiftRight(2);
+	c.sign = this->sign ^ other.sign;
 	return c;
 }
 
 //https://en.wikipedia.org/wiki/Long_division#Algorithm_for_arbitrary_base
-infnum infnum::operator/(const infnum& other) {
+infnum infnum::operator/(infnum other) const {
 	if(other == 0) throw std::overflow_error("Divide by zero exception");
+	bool sign = this->sign ^ other.sign;
 
-	const u64 SCALING_FACTOR = 1;
+	const u64 SCALING_FACTOR = 2;
 	infnum scaled_this = *this;
 	scaled_this.longShiftLeft(SCALING_FACTOR);
+
+	other.sign = 0;
+	scaled_this.sign = 0;
 
 	int k = scaled_this.size(), l = other.size();
 	if(l > k) return 0;
@@ -189,26 +200,31 @@ infnum infnum::operator/(const infnum& other) {
 	/* std::cout << "r0: " << r[0] << ", q0: " << q[0] << '\n'; */
 
 	for(int i = 1; i <= k-l+1; ++i) {
-		infnum d = r[i-1]*BASE + scaled_this.data[k-1-(i+l-2)];
+		infnum d = r[i-1] * BASE + scaled_this.data[k-1-(i+l-2)];
 
 		//binary search biggest B so that B*other <= d
 		infnum beta = 0;
-		while(beta * other < d) {
-			infnum pow2 = 1;
-			while(d >= ((pow2 << 1) + beta) * other) pow2 <<= 1;
-			/* std::cout << beta << " + " << pow2 << '\n'; */
-			beta += pow2;
+		while(beta*other != d && d - other * beta >= other) {
+			/* std::cout << "MULTIPLE (size: " << d.size() << " )START... "; */
+			infnum jajco = biggest_multiple(d.size() * 64, d-beta*other, other);
+			/* std::cout << "END\n"; */
+			beta += jajco;
 		}
 
 		r[i] = d - beta * other;
-		q[i] = q[i-1]*BASE + beta;
+		q[i-1].longShiftLeft(1);
+		q[i] = q[i-1] + beta;
 
 		/* std::cout << "di: " << d << ", beta: " << beta << '\n'; */
 		/* std::cout << "i: " << i << ", ri: " << r[i] << ", qi: " << q[i] << '\n'; */
 		/* std::cout << "\n"; */
 	}
-	q[k-l+1].longShiftRight(2*SCALING_FACTOR);
-	return q[k-l+1];
+	infnum res = q[k-l+1];
+	res.sign = sign;
+	res.longShiftRight(2*SCALING_FACTOR);
+	if(this->size() > 2) res.longShiftRight(this->size()-2);
+	res.removeLeadingZeros();
+	return res;
 }
 
 infnum infnum::operator-() {
@@ -224,7 +240,7 @@ void infnum::operator-=(const infnum& other) {
 	*this = *this - other;
 }
 
-infnum infnum::operator>>(const int& count) {
+infnum infnum::operator>>(const int& count) const{
 	if(count < 0) return *this << (-1 * count);
 	infnum temp = *this;
 	temp.longShiftRight(count / 64);
@@ -241,7 +257,7 @@ infnum infnum::operator>>(const int& count) {
 	return temp;
 }
 
-infnum infnum::operator<<(const int& count) {
+infnum infnum::operator<<(const int& count) const {
 	if(count < 0) return *this >> (-1 * count);
 	infnum temp = *this;
 	temp.longShiftLeft(count / 64);
@@ -283,23 +299,83 @@ u64 infnum::operator[](const std::size_t& index) const {
 	else return this->data[index];
 }
 
-infnum round(const infnum n) {
-	infnum temp = n;
-	temp.data[0] = 0;
-	return temp;
-}
+infnum round(infnum x) {
+	if(x[0] >= (1ULL << 63)) x += infnum({0, 1});
+	x[0] = 0;
+	return x;
 }
 
-std::ostream& operator<<(std::ostream& o, const infnum::infnum& n) {
+infnum floor(infnum x) {
+	x[0] = 0;
+	return x;
+}
+
+infnum ceil(infnum x) {
+	if(x[0] != 0) x += infnum({0, 1});
+	x[0] = 0;
+	return x;
+}
+
+infnum biggest_multiple(const u64 limit, const infnum query, const infnum mult) {
+	int l = -1, r = limit+1, mid;
+
+	while(r - l > 1) {
+		mid = (l + r) / 2;
+		infnum infmid = ((infnum)1 << mid) * mult;
+		if(query < infmid) r = mid;
+		else l = mid;
+	}
+	if(l == -1) return -1;
+	/* std::cout << "L: " << l << ", JAJCO: " << ((infnum)1 << l) << '\n'; */
+	return (infnum)1 << l;
+}
+
+infnum abs(infnum x) {
+	x.sign = 0;
+	return x;
+}
+
+}
+
+std::string pinrt(infnum::infnum x) {
+	std::string out;
+	for(auto it = x.data.rbegin(); it != x.data.rend()-1; ++it) {
+		out += std::to_string(*it);
+		if(it != x.data.rend() - 2) out += ' ';
+	}
+	infnum::u64 mult = 1ULL << 63;
+	infnum::u64 hihi = 0;
+	for(int i = 0; i < 64; ++i) {
+		if(x[0] & mult) hihi += mult;
+		mult >>= 1;
+	}
+
+	std::string decimal = std::to_string((long double)hihi / (long double)UINT64_MAX);
+	decimal.erase(decimal.begin());
+
+	out += decimal;
+	return out;
+}
+
+std::ostream& operator<<(std::ostream& o, infnum::infnum& n) {
+	/* o << pinrt(n); */
+	/* return o; */
+
+
 	if(n.sign == 1) o << '-';
-	infnum::infnum temp = round(n);
+
+	infnum::infnum temp = infnum::floor(n);
 
 	std::string integer;
 	if(temp == 0) integer = "0";
 
 	while(temp != 0) {
-		infnum::infnum div10 = round(temp / 10);
+		infnum::infnum div10 = infnum::floor(temp / 10);
 		infnum::infnum digit = temp - div10*10;
+		/* std::cout << div10.size() << ' ' << digit.size() << ' ' << temp.size() << '\n'; */
+		/* std::cout << "DEBUG: " << digit.data[1] << '\n'; */
+		/* std::cout << pinrt(temp) << '\n'; */
+		/* std::cout << temp.size() << '\n'; */
 		integer += '0' + digit.data[1];
 		temp = div10;
 	}

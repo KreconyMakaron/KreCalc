@@ -1,7 +1,6 @@
 #include"infnum.h"
 
 namespace infnum {
-const infnum BASE = (infnum)1 << 64;
 
 infnum biggest_multiple(u64 limit, infnum query, infnum mult) {
 	int l = -1, r = limit+1, mid;
@@ -201,7 +200,7 @@ infnum infnum::operator/(infnum other) const {
 	r[0] = scaled_this.longShiftRight(l-1);
 
 	for(int i = 1; i <= k-l+1; ++i) {
-		infnum d = r[i-1] * BASE + scaled_this.data[k-1-(i+l-2)];
+		infnum d = r[i-1].longShiftLeft(1) + scaled_this.data[k-1-(i+l-2)];
 
 		//binary search biggest B so that B*other <= d
 		infnum beta = 0;

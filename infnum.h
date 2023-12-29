@@ -2,12 +2,10 @@
 
 #include<cstdint>
 #include<iostream>
-#include<stdexcept>
 #include<vector>
 #include<cstring>
 #include<algorithm>
 #include<cmath>
-#include<cxxabi.h>
 
 namespace infnum {
 typedef uint64_t u64;

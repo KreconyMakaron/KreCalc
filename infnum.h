@@ -69,11 +69,15 @@ public:
 	infnum operator-(infnum other) const;
 	infnum operator*(infnum other) const;
 	infnum operator/(infnum other) const;
+	infnum operator%(infnum other) const;
 	
 	infnum operator-();
 	
 	void operator+=(infnum other);
 	void operator-=(infnum other);
+	void operator*=(infnum other);
+	void operator/=(infnum other);
+	void operator%=(infnum other);
 	
 	infnum operator>>(int count) const;
 	infnum operator<<(int count) const;
@@ -82,14 +86,17 @@ public:
 	void operator<<=(int count);
 
 	std::size_t size() const;
-	u64& operator[](const std::size_t& index);
-	u64 operator[](const std::size_t& index) const;
+	u64& operator[](std::size_t index);
+	u64 operator[](std::size_t index) const;
 };
 
 infnum round(infnum x); 
 infnum floor(infnum x); 
 infnum ceil(infnum x); 
 infnum abs(infnum x); 
+bool isInteger(infnum x); 
+infnum min(infnum x, infnum y);
+infnum max(infnum x, infnum y);
 }
 
 std::ostream& operator<<(std::ostream& o, infnum::infnum& n);

@@ -1,18 +1,12 @@
 #include"infnum.h"
+#include <cstdint>
 
 namespace infnum {
 
-infnum biggest_multiple(u64 limit, infnum query, infnum mult) {
-	int l = -1, r = limit+1, mid;
-
-	while(r - l > 1) {
-		mid = (l + r) / 2;
-		infnum infmid = ((infnum)1 << mid) * mult;
-		if(query < infmid) r = mid;
-		else l = mid;
-	}
-	if(l == -1) return -1;
-	return (infnum)1 << l;
+std::string print(infnum x) {
+	std::string res = "";
+	for(auto it = x.data.rbegin(); it != x.data.rend(); ++it) res += std::to_string(*it) + ' ';
+	return res;
 }
 
 u64 highBits(u64 x) {
@@ -78,6 +72,7 @@ infnum infnum::subtract(infnum other) const {
 	
 	for(int i = 0; i < n; ++i) {
 		if(a[i] < b[i]) {
+			b[i]--;
 			a[i] += UINT_LEAST64_MAX;
 			int k = i+1;
 			while(k < n) {
@@ -179,42 +174,29 @@ infnum infnum::operator*(infnum other) const {
 	return c.longShiftRight(2);
 }
 
-//https://en.wikipedia.org/wiki/Long_division#Algorithm_for_arbitrary_base
 infnum infnum::operator/(infnum other) const {
-	if(other == 0) throw std::overflow_error("Divide by zero exception");
-	bool sign = this->sign ^ other.sign;
+	if(other == 0) throw std::logic_error("Divide Operation: Divide by zero exception");
 
-	const u64 SCALING_FACTOR = 2;
-	infnum scaled_this = this->longShiftLeft(SCALING_FACTOR);
-
-	other.sign = 0;
-	scaled_this.sign = 0;
-
-	int k = scaled_this.size(), l = other.size();
-	if(l > k) return 0;
-
-	std::vector<infnum> q(k-l+2), r(k-l+2);
-	q[0] = 0;
-	
-	//First l-1 digits of divident
-	r[0] = scaled_this.longShiftRight(l-1);
-
-	for(int i = 1; i <= k-l+1; ++i) {
-		infnum d = r[i-1].longShiftLeft(1) + scaled_this.data[k-1-(i+l-2)];
-
-		//binary search biggest B so that B*other <= d
-		infnum beta = 0;
-		while(beta*other != d && d - other * beta >= other) beta += biggest_multiple(d.size() * 64, d-beta*other, other);
-
-		r[i] = d - beta * other;
-		q[i] = q[i-1].longShiftLeft(1) + beta;
+	infnum w = this->longShiftLeft(1);
+	infnum res = 0;
+	infnum power = (infnum)1 << (w.size() * 64);
+	while(w >= other) {
+		infnum mult = power * other;
+		if(w >= mult) {
+			w -= mult;
+			res += power;
+		}
+		power >>= 1;
 	}
-	infnum res = q[k-l+1];
-	res.sign = sign;
-	res = res.longShiftRight(2*SCALING_FACTOR);
-	if(this->size() > 2) res = res.longShiftRight(this->size()-2);
-	res.removeLeadingZeros();
-	return res;
+
+	res.sign = this->sign ^ other.sign;
+	return res.longShiftRight(1);
+}
+
+infnum infnum::operator%(infnum other) const {
+	if(!isInteger(*this) || !isInteger(other)) throw std::logic_error("Modulo Operation: Number is not an integer");
+	if(other == 0) throw std::logic_error("Modulo Operation: Divide by zero exception");
+	return *this - (floor(*this/other)*other);
 }
 
 infnum infnum::operator-() {
@@ -228,6 +210,18 @@ void infnum::operator+=(infnum other) {
 
 void infnum::operator-=(infnum other) {
 	*this = *this - other;
+}
+
+void infnum::operator*=(infnum other) {
+	*this = *this * other;
+}
+
+void infnum::operator/=(infnum other) {
+	*this = *this / other;
+}
+
+void infnum::operator%=(infnum other) {
+	*this = *this / other;
 }
 
 infnum infnum::operator>>(int count) const{
@@ -277,12 +271,12 @@ std::size_t infnum::size() const {
 	return this->data.size();
 }
 
-u64& infnum::operator[](const std::size_t& index) {
+u64& infnum::operator[](std::size_t index) {
 	if(index > this->size()-1) throw std::out_of_range((std::string)"index out of range: index = " + std::to_string(index) + ", size = " + std::to_string(this->size()));
 	else return this->data[index];
 }
 
-u64 infnum::operator[](const std::size_t& index) const {
+u64 infnum::operator[](std::size_t index) const {
 	if(index > this->size()-1) throw std::out_of_range((std::string)"index out of range: index = " + std::to_string(index) + ", size = " + std::to_string(this->size()));
 	else return this->data[index];
 }
@@ -310,6 +304,18 @@ infnum abs(infnum x) {
 	return x;
 }
 
+bool isInteger(infnum x) {
+	return x[0] == 0;
+}
+
+infnum min(infnum x, infnum y) {
+	return (x < y ? x : y);
+}
+
+infnum max(infnum x, infnum y) {
+	return (x > y ? x : y);
+}
+
 }
 
 // shit is slow - gotta fix at some point
@@ -322,21 +328,13 @@ std::ostream& operator<<(std::ostream& o, infnum::infnum& n) {
 	if(temp == 0) integer = "0";
 
 	while(temp != 0) {
-		infnum::infnum div10 = infnum::floor(temp / 10);
-		infnum::infnum digit = temp - div10*10;
-		integer += '0' + digit.data[1];
+		infnum::infnum div10 = floor(temp / 10);
+		integer += '0' + (temp - div10*10)[1];
 		temp = div10;
 	}
 	std::reverse(integer.begin(), integer.end());
 
-	infnum::u64 mult = 1ULL << 63;
-	infnum::u64 hihi = 0;
-	for(int i = 0; i < 64; ++i) {
-		if(n[0] & mult) hihi += mult;
-		mult >>= 1;
-	}
-
-	std::string decimal = std::to_string((long double)hihi / (long double)UINT64_MAX);
+	std::string decimal = std::to_string((long double)n[0] / (long double)UINT64_MAX);
 	decimal.erase(decimal.begin());
 
 	o << integer << decimal;

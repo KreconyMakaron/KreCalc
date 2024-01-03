@@ -312,9 +312,22 @@ infnum min(infnum x, infnum y) {
 	return (x < y ? x : y);
 }
 
+infnum min(std::vector<infnum> v) {
+	infnum res = v[0];
+	for(auto it = v.begin()+1; it != v.end(); ++it) res = min(res, v[1]);
+	return res;
+}
+
 infnum max(infnum x, infnum y) {
 	return (x > y ? x : y);
 }
+
+infnum max(std::vector<infnum> v) {
+	infnum res = v[0];
+	for(auto it = v.begin()+1; it != v.end(); ++it) res = min(res, v[1]);
+	return res;
+}
+
 
 }
 
@@ -334,6 +347,7 @@ std::ostream& operator<<(std::ostream& o, infnum::infnum& n) {
 	}
 	std::reverse(integer.begin(), integer.end());
 
+	//This has bad precision gotta change
 	std::string decimal = std::to_string((long double)n[0] / (long double)UINT64_MAX);
 	decimal.erase(decimal.begin());
 

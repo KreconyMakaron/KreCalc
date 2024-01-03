@@ -93,10 +93,15 @@ public:
 infnum round(infnum x); 
 infnum floor(infnum x); 
 infnum ceil(infnum x); 
+
 infnum abs(infnum x); 
+
 bool isInteger(infnum x); 
+
 infnum min(infnum x, infnum y);
+infnum min(std::vector<infnum> v);
 infnum max(infnum x, infnum y);
+infnum max(std::vector<infnum> v);
 }
 
 std::ostream& operator<<(std::ostream& o, infnum::infnum& n);

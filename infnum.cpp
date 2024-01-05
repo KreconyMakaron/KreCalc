@@ -228,6 +228,8 @@ infnum infnum::operator>>(int count) const{
 	if(count < 0) return *this << (-1 * count);
 	infnum temp = this->longShiftRight(count / 64);
 	int rest = count % 64;
+	if(rest == 0) return temp;
+
 	u64 mask = ((1 << rest) - 1);
 	
 	for(int i = 0; i < (int)this->size(); ++i) {
@@ -244,6 +246,8 @@ infnum infnum::operator<<(int count) const {
 	if(count < 0) return *this >> (-1 * count);
 	infnum temp = this->longShiftLeft(count / 64);
 	int rest = count % 64;
+	if(rest == 0) return temp;
+
 	u64 mask = ((1 << rest) - 1);
 	mask <<= (64 - rest);
 
@@ -348,10 +352,18 @@ std::ostream& operator<<(std::ostream& o, infnum::infnum& n) {
 	std::reverse(integer.begin(), integer.end());
 
 	//This has bad precision gotta change
-	std::string decimal = std::to_string((long double)n[0] / (long double)UINT64_MAX);
-	decimal.erase(decimal.begin());
+	infnum::infnum numerator = n[0];
+	infnum::infnum res;
+	std::string decimal;
+	for(int i = 0; i < 19; ++i) {
+		numerator *= 10;
+		res = floor(numerator >> 64);
+		decimal += '0' + res[1];
+		numerator -= res << 64;
+	}
 
-	o << integer << decimal;
+	while(!decimal.empty() && decimal.back() == '0') decimal.pop_back();
 
+	o << integer << '.' << decimal;
 	return o;
 }

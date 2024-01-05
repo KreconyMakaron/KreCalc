@@ -1,12 +1,37 @@
 #include"infnum.h"
-#include <cstdint>
 
 namespace infnum {
 
+//------------------------ helper functions ------------------------#
 std::string print(infnum x) {
 	std::string res = "";
 	for(auto it = x.data.rbegin(); it != x.data.rend(); ++it) res += std::to_string(*it) + ' ';
 	return res;
+}
+
+infnum fromString(std::string str) {
+	int period = -1;
+	for(int i = 0; i < str.size(); ++i) {
+		if(str[i] == '.' || str[i] == ',') {
+			if(period != -1) throw std::logic_error("Only one period/comma in a number is permitted");
+			period = i;
+		}
+	}
+
+	infnum right;
+	if(period != -1) {
+		right = fromString(str.substr(period+1, str.size()-period-1));
+		str = str.substr(0, period);
+
+		while(right >= 1) right /= 10;
+	}
+	infnum k = 1, temp;
+	for(auto it = str.rbegin(); it != str.rend(); ++it) {
+		if(*it < '0' && '9' < *it) throw std::logic_error("Unsupported token in string");
+		temp += k * (*it - '0');
+		k *= 10;
+	}
+	return temp + right;
 }
 
 u64 highBits(u64 x) {
@@ -37,6 +62,8 @@ u64 mult_u64(u64 a, u64 b, u64& carry) {
 	carry = s3 << 32 | s2;
 	return s1 << 32 | s0;
 }
+
+//------------------ infnum class member functions -----------------#
 
 void infnum::removeLeadingZeros() {
 	while(*(this->data.end()-1) == 0 && this->size() > 2) this->data.pop_back();
@@ -285,6 +312,11 @@ u64 infnum::operator[](std::size_t index) const {
 	else return this->data[index];
 }
 
+infnum::infnum(std::string str) { *this = fromString(str); }
+infnum::infnum(const char* str) { *this = fromString(str); }
+
+//------------------------ other functions -------------------------#
+
 infnum round(infnum x) {
 	if(x[0] >= (1ULL << 63)) x += infnum({0, 1});
 	x[0] = 0;
@@ -331,8 +363,6 @@ infnum max(std::vector<infnum> v) {
 	for(auto it = v.begin()+1; it != v.end(); ++it) res = min(res, v[1]);
 	return res;
 }
-
-
 }
 
 // shit is slow - gotta fix at some point

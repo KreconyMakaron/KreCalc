@@ -25,17 +25,8 @@ public:
 	std::vector<u64> data = {0, 0}; //64 bits binary expansion
 	bool sign = 0;
 
-	infnum(std::vector<u64> v) {data = v;}
-
 	template<typename T>
-	infnum(T t){ *this = t; }
-	infnum() {}
-	
-	template<typename T>
-	void operator=(T t) {
-		static_assert(std::is_integral_v<T> || std::is_floating_point_v<T>, "No matching conversion to type infnum");
-
-		*this = infnum();
+	infnum(T t){
 		if(std::is_integral_v<T>) {
 			if(t < 0) {
 				sign = 1;
@@ -45,7 +36,7 @@ public:
 		}
 		else if(std::is_floating_point_v<T>) {
 			int exp;
-			T val = std::frexp(t, &exp);
+			double val = std::frexp(t, &exp);
 			
 			for(int i = 63; i >= 0; --i) {
 				val *= 2;
@@ -56,8 +47,15 @@ public:
 			}
 			*this <<= exp;
 		}
-	}	
+	}
 
+	infnum() {}
+	infnum(std::initializer_list<u64> v) {data = v;}
+	infnum(std::string str);
+	infnum(const char* str);
+
+	template<typename T>
+	void operator=(T t) { *this = infnum(t); }
 	bool operator==(infnum other) const;
 	bool operator!=(infnum other) const;
 	bool operator>(infnum other) const;
@@ -105,3 +103,4 @@ infnum max(std::vector<infnum> v);
 }
 
 std::ostream& operator<<(std::ostream& o, infnum::infnum& n);
+

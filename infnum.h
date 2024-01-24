@@ -68,6 +68,7 @@ public:
 	infnum operator*(infnum other) const;
 	infnum operator/(infnum other) const;
 	infnum operator%(infnum other) const;
+	infnum operator^(infnum other) const;
 	
 	infnum operator-();
 	
@@ -76,6 +77,7 @@ public:
 	void operator*=(infnum other);
 	void operator/=(infnum other);
 	void operator%=(infnum other);
+	void operator^=(infnum other);
 	
 	infnum operator>>(int count) const;
 	infnum operator<<(int count) const;
@@ -86,6 +88,7 @@ public:
 	std::size_t size() const;
 	u64& operator[](std::size_t index);
 	u64 operator[](std::size_t index) const;
+
 };
 
 infnum round(infnum x); 
@@ -100,7 +103,13 @@ infnum min(infnum x, infnum y);
 infnum min(std::vector<infnum> v);
 infnum max(infnum x, infnum y);
 infnum max(std::vector<infnum> v);
+infnum root(infnum x, infnum y);
+infnum exp(infnum x);
+infnum ln(infnum x);
+
+const infnum PI({2611923443488327889ULL, 3ULL});
+const infnum E({13249961062380153449ULL, 2ULL});
 }
 
-std::ostream& operator<<(std::ostream& o, infnum::infnum& n);
+std::ostream& operator<<(std::ostream& o, const infnum::infnum& n);
 

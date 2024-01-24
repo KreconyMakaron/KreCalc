@@ -202,18 +202,19 @@ infnum infnum::operator*(infnum other) const {
 }
 
 infnum infnum::operator/(infnum other) const {
-	if(other == 0) throw std::logic_error("Divide Operation: Divide by zero exception");
+	if(other == 0) throw std::logic_error("Division Operation: Divide by zero exception");
 
 	infnum w = this->longShiftLeft(1);
 	infnum res = 0;
 	infnum power = (infnum)1 << (w.size() * 64);
+	infnum mult = power * other;
 	while(w >= other) {
-		infnum mult = power * other;
 		if(w >= mult) {
 			w -= mult;
 			res += power;
 		}
 		power >>= 1;
+		mult >>= 1;
 	}
 
 	res.sign = this->sign ^ other.sign;
@@ -225,6 +226,10 @@ infnum infnum::operator%(infnum other) const {
 	if(other == 0) throw std::logic_error("Modulo Operation: Divide by zero exception");
 	return *this - (floor(*this/other)*other);
 }
+
+/* infnum infnum::operator^(infnum other) const { */
+
+/* } */
 
 infnum infnum::operator-() {
 	this->sign = !this->sign;
@@ -314,59 +319,9 @@ u64 infnum::operator[](std::size_t index) const {
 
 infnum::infnum(std::string str) { *this = fromString(str); }
 infnum::infnum(const char* str) { *this = fromString(str); }
-
-//------------------------ other functions -------------------------#
-
-infnum round(infnum x) {
-	if(x[0] >= (1ULL << 63)) x += infnum({0, 1});
-	x[0] = 0;
-	return x;
 }
 
-infnum floor(infnum x) {
-	x[0] = 0;
-	return x;
-}
-
-infnum ceil(infnum x) {
-	if(x[0] != 0) x += infnum({0, 1});
-	x[0] = 0;
-	return x;
-}
-
-
-infnum abs(infnum x) {
-	x.sign = 0;
-	return x;
-}
-
-bool isInteger(infnum x) {
-	return x[0] == 0;
-}
-
-infnum min(infnum x, infnum y) {
-	return (x < y ? x : y);
-}
-
-infnum min(std::vector<infnum> v) {
-	infnum res = v[0];
-	for(auto it = v.begin()+1; it != v.end(); ++it) res = min(res, v[1]);
-	return res;
-}
-
-infnum max(infnum x, infnum y) {
-	return (x > y ? x : y);
-}
-
-infnum max(std::vector<infnum> v) {
-	infnum res = v[0];
-	for(auto it = v.begin()+1; it != v.end(); ++it) res = min(res, v[1]);
-	return res;
-}
-}
-
-// shit is slow - gotta fix at some point
-std::ostream& operator<<(std::ostream& o, infnum::infnum& n) {
+std::ostream& operator<<(std::ostream& o, const infnum::infnum& n) {
 	if(n.sign == 1) o << '-';
 
 	infnum::infnum temp = infnum::floor(n);
@@ -374,6 +329,7 @@ std::ostream& operator<<(std::ostream& o, infnum::infnum& n) {
 	std::string integer;
 	if(temp == 0) integer = "0";
 
+	int cnt = 0;
 	while(temp != 0) {
 		infnum::infnum div10 = floor(temp / 10);
 		integer += '0' + (temp - div10*10)[1];
@@ -381,7 +337,6 @@ std::ostream& operator<<(std::ostream& o, infnum::infnum& n) {
 	}
 	std::reverse(integer.begin(), integer.end());
 
-	//This has bad precision gotta change
 	infnum::infnum numerator = n[0];
 	infnum::infnum res;
 	std::string decimal;
@@ -394,6 +349,8 @@ std::ostream& operator<<(std::ostream& o, infnum::infnum& n) {
 
 	while(!decimal.empty() && decimal.back() == '0') decimal.pop_back();
 
-	o << integer << '.' << decimal;
+	if(decimal == "") o << integer;
+	else o << integer << '.' << decimal;
+
 	return o;
 }

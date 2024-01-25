@@ -9,6 +9,7 @@
 
 namespace infnum {
 typedef uint64_t u64;
+typedef int64_t i64;
 
 class infnum {
 
@@ -103,9 +104,10 @@ infnum min(infnum x, infnum y);
 infnum min(std::vector<infnum> v);
 infnum max(infnum x, infnum y);
 infnum max(std::vector<infnum> v);
-infnum root(infnum x, infnum y);
 infnum exp(infnum x);
 infnum ln(infnum x);
+
+i64 mostSignificantBit(infnum x);
 
 const infnum PI({2611923443488327889ULL, 3ULL});
 const infnum E({13249961062380153449ULL, 2ULL});

@@ -227,9 +227,9 @@ infnum infnum::operator%(infnum other) const {
 	return *this - (floor(*this/other)*other);
 }
 
-/* infnum infnum::operator^(infnum other) const { */
-
-/* } */
+infnum infnum::operator^(infnum other) const {
+	throw "Not implemented";
+}
 
 infnum infnum::operator-() {
 	this->sign = !this->sign;
